@@ -51,7 +51,7 @@ def monstro_defender(monstro, dano):
 def monstro_esta_vivo(monstro):
     return monstro["vida"] > 0
 
-def desenhar(aventureiro, tesouro, pocao, rodadas):
+def desenhar(aventureiro, tesouro, pocao, vida_extra, rodadas):
     for y in range(10):
         for x in range(10):
             if [x, y] == aventureiro["posicao"]:
@@ -60,6 +60,8 @@ def desenhar(aventureiro, tesouro, pocao, rodadas):
                 print("\033[91mX\033[0m", end=" ")  # Tesouro em vermelho
             elif [x, y] == pocao:
                 print("%", end=" ")
+            elif [x, y] == vida_extra:
+                print("\033[92m$\033[0m", end=" ")  # Vida extra em verde
             else:
                 print(".", end=" ")
         print()
@@ -87,13 +89,18 @@ def iniciar_combate(aventureiro, monstro):
             print("Você foi derrotado pelo monstro...")
             return False
 
-def movimentar(aventureiro, direcao, pocao):
+def movimentar(aventureiro, direcao, pocao, vida_extra):
     if not aventura_andar(aventureiro, direcao):
         return True
 
     if aventureiro["posicao"] == pocao:
         aplicar_efeito_pocao(aventureiro)
         pocao.clear()
+    
+    if aventureiro["posicao"] == vida_extra:
+        aventureiro["vidas_extras"] += 1
+        vida_extra.clear()
+        print("Você ganhou uma vida extra!")
 
     efeito = random.choices(["nada", "monstro"], [0.6, 0.4])[0]
     if efeito == "monstro":
@@ -127,6 +134,12 @@ def gerar_pocao():
         pocao = [random.randint(1, 9), random.randint(1, 9)]
     return pocao
 
+def gerar_vida_extra():
+    vida_extra = [random.randint(1, 9), random.randint(1, 9)]
+    while vida_extra == [0, 0]:
+        vida_extra = [random.randint(1, 9), random.randint(1, 9)]
+    return vida_extra
+
 def ganhar_experiencia(aventureiro, quantidade):
     aventureiro["experiencia"] += quantidade
     if aventureiro["experiencia"] >= aventureiro["exp_para_nivel"]:
@@ -148,17 +161,19 @@ def main():
         "posicao": [0, 0],
         "nivel": 1,
         "experiencia": 0,
-        "exp_para_nivel": 5
+        "exp_para_nivel": 5,
+        "vidas_extras": 0
     }
 
     tesouro = gerar_tesouro()
     pocao = gerar_pocao()
+    vida_extra = gerar_vida_extra()
     rodadas = 0
 
     aventureiro["nome"] = input("Deseja buscar um tesouro? Primeiro, informe seu nome: ")
     print(f"Saudações, {aventureiro['nome']}! Boa sorte!")
 
-    desenhar(aventureiro, tesouro, pocao, rodadas)
+    desenhar(aventureiro, tesouro, pocao, vida_extra, rodadas)
 
     while True:
         op = input("Insira o seu comando: ").upper()
@@ -168,9 +183,9 @@ def main():
         elif op == "T":
             ver_atributos_aventureiro(aventureiro)
         elif op in ["W", "A", "S", "D"]:
-            if movimentar(aventureiro, op, pocao):
+            if movimentar(aventureiro, op, pocao, vida_extra):
                 rodadas += 1
-                desenhar(aventureiro, tesouro, pocao, rodadas)
+                desenhar(aventureiro, tesouro, pocao, vida_extra, rodadas)
             else:
                 print("Game Over...")
                 break
